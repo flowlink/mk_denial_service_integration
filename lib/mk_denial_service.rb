@@ -3,10 +3,10 @@ require 'savon'
 class MKDenialService
   attr_reader :credentials, :client
 
-  def initialize
+  def initialize(config)
     @credentials = {
-      "Username" => ENV['MK_DENIAL_SERVICE_LOGIN'],
-      "Password" => ENV['MK_DENIAL_SERVICE_PASSWD']
+      "Username" => config[:mk_denial_service_login],
+      "Password" => config[:mk_denial_service_password]
     }
 
     @client = Savon.client(
@@ -31,7 +31,7 @@ class MKDenialService
   #   ExcludeCommonWords: recommended true
   #   excludeWeakAliases: weak alias toggle
   #
-  def search_dpl
+  def search_dpl(billing_address = {}, shipping_address = {})
     response = client.call(
       :search_dpl,
       message: {
@@ -45,12 +45,28 @@ class MKDenialService
           "Groups" => [
             {
               "Group" => {
-                "Connect" => "and",
+                "Connect" => "or",
                 "Matches" => [
                   {
                     "Match" => {
                       "Field" => "Name",
-                      "Keyword" => "jonh smith",
+                      "Keyword" => "#{billing_address[:firstname]} #{billing_address[:lastname]}",
+                      "Level" => 1,
+                      "Scope" => "Word",
+                      "Type" => "Is"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "Group" => {
+                "Connect" => "or",
+                "Matches" => [
+                  {
+                    "Match" => {
+                      "Field" => "Name",
+                      "Keyword" => "#{shipping_address[:firstname]} #{shipping_address[:lastname]}",
                       "Level" => 1,
                       "Scope" => "Word",
                       "Type" => "Is"
@@ -63,5 +79,7 @@ class MKDenialService
         }
       }
     )
+
+    response.body
   end
 end

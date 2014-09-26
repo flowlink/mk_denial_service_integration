@@ -4,8 +4,6 @@ require "endpoint_base"
 require File.expand_path(File.dirname(__FILE__) + '/lib/mk_denial_service')
 
 class MKDenialServiceEndpoint < EndpointBase::Sinatra::Base
-  endpoint_key ENV['ENDPOINT_KEY']
-
   Honeybadger.configure do |config|
     config.api_key = ENV['HONEYBADGER_KEY']
     config.environment_name = ENV['RACK_ENV']

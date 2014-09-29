@@ -2,6 +2,7 @@ require "sinatra"
 require "endpoint_base"
 
 require File.expand_path(File.dirname(__FILE__) + '/lib/mk_denial_service')
+require File.expand_path(File.dirname(__FILE__) + '/lib/mk_denial_service_integration/order')
 
 class MKDenialServiceEndpoint < EndpointBase::Sinatra::Base
   Honeybadger.configure do |config|
@@ -10,11 +11,10 @@ class MKDenialServiceEndpoint < EndpointBase::Sinatra::Base
   end if ENV['HONEYBADGER_KEY'].present?
 
   post "/verify_order" do
-    shipping = @payload[:order][:shipping_address]
-    billing = @payload[:order][:billing_address]
-    response = MKDenialService.new(@config).search_dpl billing, shipping
+    order = MKDenialServiceIntegration::Order.new(@config, @payload)
+    hits = order.verify!
 
-    add_object "order", { id: @payload[:order][:id], mkd_hits: response[:hits] }
+    add_object "order", { id: @payload[:order][:id], mkd_hits: hits } if hits
     result 200, "Order billing and shipping address verified on MK Denial Service"
   end
 end

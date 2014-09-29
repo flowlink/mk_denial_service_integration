@@ -4,6 +4,7 @@ require 'bundler'
 Bundler.require(:default, :test)
 
 require File.join(File.dirname(__FILE__), '..', 'lib/mk_denial_service')
+require File.join(File.dirname(__FILE__), '..', 'lib/mk_denial_service_integration/order')
 require File.join(File.dirname(__FILE__), '..', 'mk_denial_service_endpoint')
 
 Dir["./spec/support/**/*.rb"].each { |f| require f }

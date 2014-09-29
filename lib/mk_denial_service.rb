@@ -1,29 +1,19 @@
 require 'savon'
 
 class MKDenialService
-  attr_reader :credentials, :client
+  attr_reader :credentials
 
   def initialize(config)
     @credentials = {
       "Username" => config[:mk_denial_service_login],
       "Password" => config[:mk_denial_service_password]
     }
-
-    @client = Savon.client(
-      ssl_verify_mode: :none,
-      wsdl: 'https://sandbox.mkdenial.com/dplv3_1.asmx?wsdl',
-      log_level: :debug,
-      log: true
-    )
   end
 
-  # Options:
+  # See https://mkdataservices.zendesk.com/hc/en-us/articles/202870130-Objects
+  # for detailed description of each field
   #
-  #   nametosearch = "john smith"; // supply the name to search for
-  #   countrytosearch = "US"; // country to search
-  #   streettosearch = ""; // street to search
-  #   citytosearch = "Lompoc"; // city to search
-  #   statetosearch = "CA"; // state to search
+  # Options:
   #
   #   MaxReturnHits: maximum hits to return and cannot exceed the server maximum
   #     (1000). set to 0 to default to server maximum
@@ -31,55 +21,58 @@ class MKDenialService
   #   ExcludeCommonWords: recommended true
   #   excludeWeakAliases: weak alias toggle
   #
-  def search_dpl(billing_address = {}, shipping_address = {})
+  def search_dpl(groups = [])
     response = client.call(
       :search_dpl,
       message: {
         credentials: credentials,
         request: {
           "AlwaysIncludeUnknownCountry" => true,
-          "Connect" => "and",
+          "Connect" => "or",
           "ExcludeCommonWords" => true,
           "ExcludeWeakAliases" => true,
-          "MaxReturnHits" => 0,
-          "Groups" => [
-            {
-              "Group" => {
-                "Connect" => "or",
-                "Matches" => [
-                  {
-                    "Match" => {
-                      "Field" => "Name",
-                      "Keyword" => "#{billing_address[:firstname]} #{billing_address[:lastname]}",
-                      "Level" => 1,
-                      "Scope" => "Word",
-                      "Type" => "Is"
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "Group" => {
-                "Connect" => "or",
-                "Matches" => [
-                  {
-                    "Match" => {
-                      "Field" => "Name",
-                      "Keyword" => "#{shipping_address[:firstname]} #{shipping_address[:lastname]}",
-                      "Level" => 1,
-                      "Scope" => "Word",
-                      "Type" => "Is"
-                    }
-                  }
-                ]
-              }
-            }
-          ]
+          "MaxReturnHits" => 100,
+          "Groups" => groups
         }
       }
     )
 
     response.body
   end
+
+  def build_group(data)
+    {
+      "Group" => {
+        "Connect" => "and",
+        "Matches" => [
+          {
+            "Match" => {
+              "Field" => "Name",
+              "Keyword" => "#{data[:lastname]}, #{data[:firstname]}",
+              "Level" => 2,
+              "Scope" => "Word",
+              "Type" => "Is"
+            }
+          },
+          {
+            "Match" => {
+              "Field" => "Country",
+              "Keyword" => data[:country],
+              "Type" => "Is"
+            }
+          }
+        ]
+      }
+    }
+  end
+
+  private
+    def client
+      @client ||= Savon.client(
+        ssl_verify_mode: :none,
+        wsdl: 'https://sandbox.mkdenial.com/dplv3_1.asmx?wsdl',
+        log_level: :debug,
+        log: true
+      )
+    end
 end

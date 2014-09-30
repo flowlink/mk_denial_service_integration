@@ -1,12 +1,18 @@
 require 'savon'
 
 class MKDenialService
-  attr_reader :credentials
+  attr_reader :credentials, :wsdl
 
   def initialize(config)
+    @wsdl = if config[:mk_denial_production].to_s == "true" || config[:mk_production].to_s == "1"
+              'https://www.mkdenial.com/dplv3_1.asmx?wsdl'
+            else
+              'https://sandbox.mkdenial.com/dplv3_1.asmx?wsdl'
+            end
+
     @credentials = {
-      "Username" => config[:mk_denial_service_login],
-      "Password" => config[:mk_denial_service_password]
+      "Username" => config[:mk_denial_login],
+      "Password" => config[:mk_denial_password]
     }
   end
 
@@ -70,7 +76,7 @@ class MKDenialService
     def client
       @client ||= Savon.client(
         ssl_verify_mode: :none,
-        wsdl: 'https://sandbox.mkdenial.com/dplv3_1.asmx?wsdl',
+        wsdl: wsdl,
         log_level: :debug,
         log: true
       )

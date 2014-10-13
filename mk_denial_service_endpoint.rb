@@ -12,9 +12,7 @@ class MKDenialServiceEndpoint < EndpointBase::Sinatra::Base
 
   post "/verify_order" do
     order = MKDenialServiceIntegration::Order.new(@config, @payload)
-    hits = order.verify!
-
-    add_object "order", { id: @payload[:order][:id], mkd_hits: hits } if hits
+    add_object "order", order.updated_object
     result 200, "Order billing and shipping address verified on MK Denial Service"
   end
 end

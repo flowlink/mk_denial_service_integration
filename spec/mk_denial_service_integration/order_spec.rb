@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'active_support/core_ext/date/calculations'
+require 'active_support/core_ext/numeric/time'
 
 module MKDenialServiceIntegration
   describe Order do
@@ -45,7 +47,7 @@ module MKDenialServiceIntegration
       subject = described_class.new(config, order: order)
 
       VCR.use_cassette("hits") do
-        hits = subject.verify!
+        hits = subject.hits
         expect(hits.first[:name]).to match order[:billing_address][:firstname]
       end
     end
@@ -63,9 +65,18 @@ module MKDenialServiceIntegration
       subject = described_class.new(config, order: order)
 
       VCR.use_cassette("no_hits") do
-        hits = subject.verify!
-        expect(hits).to eq nil
+        expect(subject.hits).to eq nil
       end
+    end
+
+    it "checks date range for denied or approved" do
+      subject = described_class.new config, { order: {} }
+
+      hits = [{ end_date: "2013-02-16T00:00:00+00:00" }, { end_date: "2014-02-16T00:00:00+00:00" }]
+      expect(subject.mkd_screen_result hits).to eq "approved"
+
+      hits = [{ end_date: 10.days.from_now }, { end_date: "2014-02-16T00:00:00+00:00" }]
+      expect(subject.mkd_screen_result hits).to eq "denied"
     end
   end
 end

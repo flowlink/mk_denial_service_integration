@@ -21,7 +21,7 @@ describe MKDenialServiceEndpoint do
     VCR.use_cassette("hits") do
       post "/verify_order", request.to_json, auth
       expect(last_response.status).to eq 200
-      expect(json_response[:summary]).to match "verified"
+      expect(json_response[:summary]).to match "Screening result from MK"
     end
   end
 end

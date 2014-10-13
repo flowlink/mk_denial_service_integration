@@ -72,10 +72,16 @@ module MKDenialServiceIntegration
     it "checks date range for denied or approved" do
       subject = described_class.new config, { order: {} }
 
-      hits = [{ end_date: "2013-02-16T00:00:00+00:00" }, { end_date: "2014-02-16T00:00:00+00:00" }]
+      hits = [
+        { start_date: "2013-01-16T00:00:00+00:00", end_date: "2013-02-16T00:00:00+00:00" },
+        { start_date: "2014-01-16T00:00:00+00:00", end_date: "2014-02-16T00:00:00+00:00" }
+      ]
       expect(subject.mkd_screen_result hits).to eq "approved"
 
-      hits = [{ end_date: 10.days.from_now }, { end_date: "2014-02-16T00:00:00+00:00" }]
+      hits = [
+        { start_date: 10.days.ago, end_date: 10.days.from_now },
+        { start_date: 10.days.ago, end_date: "2014-02-16T00:00:00+00:00" }
+      ]
       expect(subject.mkd_screen_result hits).to eq "denied"
     end
   end

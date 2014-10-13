@@ -19,8 +19,11 @@ module MKDenialServiceIntegration
 
     def mkd_screen_result(collection = hits)
       screen_result = (collection || []).any? do |hit|
+        start_date = Time.parse hit[:start_date].to_s
         end_date = Time.parse hit[:end_date].to_s
-        end_date >= Time.now
+        current_time = Time.now
+
+        start_date <= current_time && end_date >= current_time
       end
 
       screen_result ? "denied" : "approved"
